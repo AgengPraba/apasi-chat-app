@@ -12,17 +12,17 @@ import { Observable } from 'rxjs';
 export class HomePage implements OnInit {
   @ViewChild('new_chat') modal: ModalController;
   @ViewChild('popover') popover: PopoverController;
-  segment: string = 'chats ';
+  segment: string = 'chats';
   open_new_chat: boolean = false;
   users = [
-    { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/315' },
-    { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/316' },
-    { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/317' },
+    { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
+    { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
+    { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
   ];
   chatRooms = [
-    { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/315' },
-    { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/316' },
-    { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/317' },
+    { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
+    { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
+    { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
   ];
 
   constructor(private router: Router) {}
