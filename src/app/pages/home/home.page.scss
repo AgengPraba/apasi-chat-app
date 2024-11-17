@@ -1,0 +1,41 @@
+ion-header.title-header {
+  box-shadow: none !important;
+  ion-toolbar {
+    font-family: "public sans", sans-serif !important;
+    ion-title {
+      letter-spacing: 2px;
+      font-size: 1.8rem !important;
+    }
+  }
+  ion-segment {
+    --background: var(--ion-color-primary);
+    ion-segment-button {
+      font-size: 1rem;
+      --color: var(--ion-color-dark);
+      --color-checked: var(--ion-color-dark);
+    }
+  }
+
+  ion-content {
+    ion-list {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    ion-item {
+      margin-top: 2vh;
+      ion-label {
+        font-size: 1.2rem;
+        p {
+          margin-top: 3px;
+        }
+      }
+      ion-text {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+.no-shadow {
+  box-shadow: none !important;
+}

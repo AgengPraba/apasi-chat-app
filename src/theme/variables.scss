@@ -1,2 +1,39 @@
 // For information on how to create your own theme, please see:
 // http://ionicframework.com/docs/theming/
+:root {
+  // --ion-color-primary: #69d2e7;
+  --ion-color-primary: #87ceeb;
+  // --ion-color-primary-3: #a7dbd8;
+  --ion-color-light: #daf5f0;
+  // --ion-color-secondary: #ff69b4;
+  --ion-color-secondary: #ffb2ef;
+  // --ion-color-secondary-3: #ffc0cb;
+  // --ion-color-secondary-4: #fcdfff;
+  // --ion-color-tertiary: #9723c9;
+  --ion-color-tertiary: #a389ee;
+  // --ion-color-tertiary-3: #c4a1ff;
+  // --ion-color-tertiary-4: #e3dff2;
+  // --ion-color-danger: #ff6b6b;
+  --ion-color-danger: #ff7a5c;
+  // --ion-color-danger-3: #ffa07a;
+  // --ion-color-danger-4: #f8d6b3;
+  // --ion-color-warning: #e3a018;
+  --ion-color-warning: #f4d738;
+  // --ion-color-warning-3: #ffdb58;
+  // --ion-color-warning-4: #fdfd96;
+  // --ion-color-success: #7fbc8c;
+  --ion-color-success: #90ee90;
+  // --ion-color-success-3: #bafca2;
+  // --ion-color-success-4: #b5d2ad;
+  --ion-color-dark: #000000;
+
+  --font-public-sans: "Public Sans", sans-serif;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+}
+
+html {
+  --ion-font-family: var(--font-public-sans);
+  --ion-font-weight: var(--font-weight-normal);
+}
