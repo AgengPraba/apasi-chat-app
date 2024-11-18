@@ -6,6 +6,13 @@ ion-header.title-header {
       letter-spacing: 2px;
       font-size: 1.8rem !important;
     }
+    // ion-popover {
+    //   ng-template {
+    //     ion-content:hover {
+    //       cursor: pointer !important;
+    //     }
+    //   }
+    // }
   }
   ion-segment {
     --background: var(--ion-color-primary);

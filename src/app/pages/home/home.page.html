@@ -11,7 +11,7 @@
         ></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-popover trigger="popover" triggerAction="click">
+    <ion-popover #popover trigger="popover" triggerAction="click">
       <ng-template>
         <ion-content class="ion-padding ion-text-center" (click)="logout()">
           <ion-label color="danger"> LOGOUT </ion-label></ion-content
@@ -77,7 +77,7 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-content *ngIf="users as user$">
+      <ion-content *ngIf="(users | async) as user$">
         <ion-list
           class="ion-margin-top"
           [style.background]="'transparent'"
