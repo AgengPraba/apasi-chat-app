@@ -8,11 +8,17 @@
 </ion-header>
 
 <ion-content>
-  <ion-list lines="none" *ngIf="(chats) as chat$">
-    <ion-item-group class="chats-group" *ngFor="let chat of chats">
+  <app-empty-screen 
+  *ngIf="(chats | async)?.length == 0"
+  [model]="model"
+  >
+  </app-empty-screen>
+
+  <ion-list lines="none" *ngIf="(chats | async) as chat$">
+    <ion-item-group class="chats-group" *ngFor="let chat of chat$">
       <app-chat-box
         [chat]="chat"
-        [current_user_id]="currentUserId"
+        [current_user_id]="chatService.currentUserId"
       ></app-chat-box>
     </ion-item-group>
   </ion-list>

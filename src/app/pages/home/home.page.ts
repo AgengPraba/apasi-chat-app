@@ -1,8 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular';
-import { Observable } from 'rxjs';
+import { Observable, take } from 'rxjs';
 import { ChatService } from 'src/app/services/chat/chat.service';
 
 @Component({
@@ -16,20 +16,34 @@ export class HomePage implements OnInit {
   segment: string = 'chats';
   open_new_chat: boolean = false;
   users: Observable<any[]>;
+  chatRooms: Observable<any[]>;
+  model = {
+    icon: 'chatbubbles-outline',
+    title: 'No Chat Rooms',
+    color: 'danger'
+  };
   // users = [
   //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
   //   { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
   //   { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
   // ];
-  chatRooms = [
-    { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
-    { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
-    { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
-  ];
+  // chatRooms = [
+  //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
+  //   { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
+  //   { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
+  // ];
 
   constructor(private router: Router, private chatService: ChatService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.getRooms();
+  }
+
+  getRooms(){
+    this.chatService.getChatRooms();
+    this.chatRooms = this.chatService.chatRooms;
+    console.log('chatrooms: ', this.chatRooms);
+  }
 
   async logout() {
     try {
@@ -63,9 +77,37 @@ export class HomePage implements OnInit {
     this.open_new_chat = false;
   }
 
-  startChat(item) {}
+  async startChat(item) {
+    try {
+      const room = await this.chatService.createChatRoom(item?.uid);
+      console.log('room: ', room);
+      this.cancel();
+      const navData: NavigationExtras = {
+        queryParams: {
+          name: item?.name
+        }
+      };
+      this.router.navigate(['/', 'home', 'chats', room?.id], navData);
+    } catch(e){
+      console.log(e);
+    }
+  }
 
   getChat(item) {
-    this.router.navigate(['/', 'home', 'chats', item?.id]);
+    (item?.user).pipe(
+      take(1)
+    ).subscribe(user_data => {
+      console.log('data: ', user_data);
+      const navData: NavigationExtras = {
+        queryParams: {
+          name: user_data?.name
+        }
+      };
+      this.router.navigate(['/', 'home', 'chats', item?.id], navData);
+    })
+  }
+
+  getUser(user: any){
+    return user;
   }
 }
