@@ -1,10 +1,11 @@
 ion-header.title-header {
   box-shadow: none !important;
   ion-toolbar {
-    font-family: "public sans", sans-serif !important;
+    font-family: "Archivo", sans-serif !important;
     ion-title {
-      letter-spacing: 2px;
-      font-size: 1.8rem !important;
+      letter-spacing: -1px;
+      font-size: 1.6rem !important;
+      font-weight: 700 !important;
     }
     // ion-popover {
     //   ng-template {
