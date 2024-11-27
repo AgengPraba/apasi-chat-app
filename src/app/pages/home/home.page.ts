@@ -1,9 +1,12 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { addDoc, collection, deleteDoc, doc, Firestore, getDocs } from '@angular/fire/firestore';
 import { NavigationExtras, Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular';
-import { Observable, take } from 'rxjs';
+import { map, Observable, take } from 'rxjs';
+import { ApiService } from 'src/app/services/api/api.service';
 import { ChatService } from 'src/app/services/chat/chat.service';
+import { StatusService } from 'src/app/services/status/status.service';
 
 @Component({
   selector: 'app-home',
@@ -22,6 +25,8 @@ export class HomePage implements OnInit {
     title: 'No Chat Rooms',
     color: 'danger'
   };
+  statuses: { message: string; timestamp: string; id: string }[] = []; // Menambahkan id pada tipe data
+  newStatus: string = ''; // Input status baru
   // users = [
   //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
   //   { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
@@ -33,10 +38,20 @@ export class HomePage implements OnInit {
   //   { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
   // ];
 
-  constructor(private router: Router, private chatService: ChatService) {}
+  constructor(
+    private router: Router, 
+    private chatService: ChatService, 
+    private statusService: StatusService,
+    private api: ApiService,
+    private firestore: Firestore
+  ) {}
 
   ngOnInit() {
+     // Panggil getRooms untuk mengambil chat rooms
     this.getRooms();
+
+    // Panggil getStatuses untuk mengambil status
+    this.getStatuses();
   }
 
   getRooms(){
@@ -109,5 +124,53 @@ export class HomePage implements OnInit {
 
   getUser(user: any){
     return user;
+  }
+
+  async getStatuses() {
+    const querySnapshot = await getDocs(collection(this.firestore, 'statuses'));
+    this.statuses = querySnapshot.docs.map(doc => {
+      const data = doc.data(); // Ambil data dari Firestore
+      return { 
+        message: data['message'],     // Akses menggunakan bracket notation
+        timestamp: data['timestamp'], // Akses menggunakan bracket notation
+        id: doc.id                    // Ambil 'id' dari Firestore
+      };
+    });
+  }  
+
+  async addStatus() {
+    if (this.newStatus.trim() !== '') {
+      const timestamp = this.getTime(); // Ambil waktu
+      try {
+        const docRef = await addDoc(collection(this.firestore, 'statuses'), {
+          message: this.newStatus,
+          timestamp: timestamp,
+        });
+        this.statuses.unshift({
+          message: this.newStatus,
+          timestamp: timestamp,
+          id: docRef.id, // Menambahkan ID dari Firestore
+        });
+        this.newStatus = ''; // Menghapus input setelah ditambahkan
+      } catch (e) {
+        console.error('Error adding status: ', e);
+      }
+    }
+  }  
+
+  // Fungsi untuk mendapatkan waktu
+  getTime(): string {
+    const now = new Date();
+    return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  // Fungsi untuk menghapus status berdasarkan id
+  async deleteStatus(id: string) {
+    console.log(`Deleting status with id: ${id}`);
+    // Hapus status dari Firestore
+    const statusRef = doc(this.firestore, 'statuses', id);
+    await deleteDoc(statusRef);
+    // Hapus status dari array statuses
+    this.statuses = this.statuses.filter(status => status.id !== id);
   }
 }

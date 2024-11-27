@@ -1,0 +1,38 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title color="dark">Status</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <!-- Input untuk Mengirim Status Baru -->
+    <ion-item>
+      <ion-label position="stacked">What's on your mind?</ion-label>
+      <ion-textarea [(ngModel)]="newStatus" placeholder="Type your status here..."></ion-textarea>
+    </ion-item>
+    <ion-button expand="block" (click)="addStatus()" color="primary" [disabled]="!newStatus">
+      Post Status
+    </ion-button>
+  </ion-list>
+
+  <!-- Daftar Status -->
+  <ion-list *ngIf="statuses.length > 0">
+    <ion-list-header>
+      <h2>Recent Status</h2>
+    </ion-list-header>
+    <ion-item *ngFor="let status of statuses">
+      <ion-label>
+        <h3>{{ status }}</h3>
+        <p>{{ getTime() }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- Pesan Jika Tidak Ada Status -->
+  <ion-item *ngIf="statuses.length === 0">
+    <ion-label>
+      <h3>No status available</h3>
+    </ion-label>
+  </ion-item>
+</ion-content>

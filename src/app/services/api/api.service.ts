@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   collectionData,
+  deleteDoc,
   doc,
   docData,
   Firestore,
@@ -19,7 +20,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class ApiService {
-  constructor(private firestore: Firestore) {}
+  constructor(public firestore: Firestore) {}
 
   docRef(path) {
     return doc(this.firestore, path);
@@ -81,5 +82,14 @@ export class ApiService {
 
   orderByQuery(fieldPath, directionStr: OrderByDirection = 'asc') {
     return orderBy(fieldPath, directionStr);
+  }
+
+  async deleteDocument(collectionName: string, docId: string) {
+    try {
+      const docRef = doc(this.firestore, collectionName, docId);
+      await deleteDoc(docRef);  // Menghapus dokumen dari koleksi
+    } catch (error) {
+      console.error('Error deleting document: ', error);
+    }
   }
 }

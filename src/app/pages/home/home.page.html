@@ -50,6 +50,24 @@
     </ion-item>
   </ion-list>
 
+    <!-- Konten untuk Status -->
+    <ng-container *ngIf="segment === 'status'">
+      <ion-content>
+        <ion-input [(ngModel)]="newStatus" placeholder="What's on your mind?"></ion-input>
+        <ion-button (click)="addStatus()">Post Status</ion-button>
+      
+        <ion-list>
+          <ion-item *ngFor="let status of statuses">
+            <ion-label>
+              <h2>{{ status.message }}</h2>
+              <p>{{ status.timestamp }}</p>
+            </ion-label>
+            <ion-button color="danger" (click)="deleteStatus(status.id)">Delete</ion-button>
+          </ion-item>
+        </ion-list>        
+      </ion-content>
+    </ng-container>
+
   <ion-fab slot="fixed" horizontal="end" vertical="bottom">
     <ion-fab-button (click)="newChat()">
       <ion-icon name="add"></ion-icon>
