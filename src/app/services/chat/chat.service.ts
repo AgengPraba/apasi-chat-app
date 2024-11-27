@@ -29,19 +29,18 @@ export class ChatService {
     );
   }
 
-  async createChatRoom(user_id){
-    try{
+  async createChatRoom(user_id) {
+    try {
+      // check for existing chatroom
       let room: any;
-      const querySnapShoot = await this.api.getDocs(
+      const querySnapshot = await this.api.getDocs(
         'chatRooms',
-        this.api.whereQuery(
-          'members',
-          'in',
-          [[user_id, this.currentUserId], [this.currentUserId, user_id]]
-        )
+        this.api.whereQuery('members', 'in', [
+          [user_id, this.currentUserId],
+          [this.currentUserId, user_id],
+        ])
       );
-
-      room = await querySnapShoot.docs.map((doc: any) => {
+      room = await querySnapshot.docs.map((doc: any) => {
         let item = doc.data();
         item.id = doc.id;
         return item;

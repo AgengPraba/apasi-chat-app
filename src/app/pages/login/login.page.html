@@ -1,4 +1,4 @@
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" color="light">
   <div class="circleBase type2 circle1"></div>
   <div class="circleBase type1"></div>
   <div class="circleBase type2 circle2"></div>
@@ -12,8 +12,8 @@
 
   <form [formGroup]="form">
     <ion-list lines="none" class="ion-margin ion-padding ion-text-center">
-      <ion-item class="ion-margin-vertical">
-        <ion-icon name="mail-outline" slot="end" color="medium"> </ion-icon>
+      <ion-item class="ion-margin-vertical" tabindex="0">
+        <ion-icon name="mail-outline" slot="end" color="primary"> </ion-icon>
         <ion-input formControlName="email" placeholder="Enter Email Address">
         </ion-input>
       </ion-item>
@@ -30,7 +30,7 @@
           (click)="onChange()"
           [name]="isTypePassword ? 'lock-closed-outline' : 'lock-open-outline'"
           slot="end"
-          [color]="isTypePassword ? 'medium' : 'primary'"
+          [color]="isTypePassword ? 'primary' : 'primary'"
         >
         </ion-icon>
         <ion-input
@@ -70,11 +70,7 @@
         </ion-col>
       </ion-row>
       <!-- <ion-button color="primary" shape="round" (click)="onSubmit()">Log In</ion-button> -->
-      <ion-button
-        *ngIf="!isLogin"
-        color="primary"
-        shape="round"
-        (click)="onSubmit()"
+      <ion-button *ngIf="!isLogin" shape="round" (click)="onSubmit()"
         >Log In</ion-button
       >
       <ion-button fill="clear" *ngIf="isLogin">

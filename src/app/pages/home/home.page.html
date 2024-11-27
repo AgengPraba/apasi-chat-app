@@ -1,6 +1,6 @@
 <ion-header class="title-header">
   <ion-toolbar color="primary">
-    <ion-title color="dark" class="ion-text-center">Apasi</ion-title>
+    <ion-title color="dark">Apasi</ion-title>
     <ion-buttons slot="primary">
       <ion-button fill="clear" id="popover">
         <ion-icon
@@ -14,26 +14,11 @@
     <ion-popover #popover trigger="popover" triggerAction="click">
       <ng-template>
         <ion-content class="ion-padding ion-text-center" (click)="logout()">
-          <ion-label color="danger"> LOGOUT </ion-label></ion-content
+          <ion-label color="danger"> Logout </ion-label></ion-content
         >
       </ng-template>
     </ion-popover>
   </ion-toolbar>
-  <ion-segment
-    [value]="segment"
-    mode="md"
-    (ionChange)="onSegmentChanged($event)"
-  >
-    <ion-segment-button value="status" checked>
-      <ion-label>Status</ion-label>
-    </ion-segment-button>
-    <ion-segment-button value="chats">
-      <ion-label>Chats</ion-label>
-    </ion-segment-button>
-    <ion-segment-button value="calls">
-      <ion-label>Calls</ion-label>
-    </ion-segment-button>
-  </ion-segment>
 </ion-header>
 
 <ion-content>
@@ -102,3 +87,26 @@
     </ng-template>
   </ion-modal>
 </ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-segment
+      [value]="segment"
+      mode="md"
+      (ionChange)="onSegmentChanged($event)"
+    >
+      <ion-segment-button value="chats">
+        <ion-icon name="chatbox-outline"></ion-icon>
+        <ion-label class="ion-text-capitalize">Chats</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="status" checked>
+        <ion-icon name="footsteps-outline"></ion-icon>
+        <ion-label class="ion-text-capitalize">Status</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="profile">
+        <ion-icon name="person-outline"></ion-icon>
+        <ion-label class="ion-text-capitalize">Profile</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-footer>

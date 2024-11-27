@@ -50,7 +50,7 @@ export class HomePage implements OnInit {
       console.log('logout');
       this.popover.dismiss();
       await this.chatService.auth.logout();
-      // this.chatService.currentUserId = null;
+      this.chatService.currentUserId = null;
       this.router.navigateByUrl('/login', { replaceUrl: true });
     } catch (e) {
       console.log(e);
