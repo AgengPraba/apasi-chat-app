@@ -10,18 +10,16 @@ import { ChatService } from 'src/app/services/chat/chat.service';
   styleUrls: ['./chat.page.scss'],
 })
 export class ChatPage implements OnInit {
-
-  @ViewChild(IonContent, {static: false}) content: IonContent;
+  @ViewChild(IonContent, { static: false }) content: IonContent;
   id: string;
   name: string;
   chats: Observable<any[]>;
   message: string;
   isLoading: boolean;
-  currentUserId = 1;
   model = {
     icon: 'chatbubbles-outline',
-    title: 'No Conservation',
-    color: 'danger'
+    title: 'No Conversation',
+    color: 'danger',
   };
 
   constructor(
@@ -33,13 +31,12 @@ export class ChatPage implements OnInit {
   ngOnInit() {
     const data: any = this.route.snapshot.queryParams;
     console.log('data: ', data);
-    if(data?.name){
+    if (data?.name) {
       this.name = data.name;
     }
-
     const id = this.route.snapshot.paramMap.get('id');
     console.log('check id: ', id);
-    if(!id){
+    if (!id) {
       this.navCtrl.back();
       return;
     }
@@ -49,27 +46,26 @@ export class ChatPage implements OnInit {
     console.log(this.chats);
   }
 
-  ngAfterViewChecked(){
+  ngAfterViewChecked() {
     this.scrollToBottom();
   }
 
-  scrollToBottom(){
-    console.log('scroll bottom');
-    if(this.chats) this.content.scrollToBottom(500);
+  scrollToBottom() {
+    if (this.chats) this.content.scrollToBottom(500);
   }
 
   async sendMessage() {
-    if(!this.message || this.message?.trim() == ''){
-      // this.global,errorToast('Please enter a propper message', 2000);
+    if (!this.message || this.message?.trim() == '') {
+      // this.global.errorToast('Please enter a proper message', 2000);
       return;
     }
-    try{
+    try {
       this.isLoading = true;
       await this.chatService.sendMessage(this.id, this.message);
       this.message = '';
       this.isLoading = false;
       this.scrollToBottom();
-    } catch(e){
+    } catch (e) {
       this.isLoading = false;
       console.log(e);
       // this.global.errorToast();

@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { AuthService } from '../auth/auth.service';
-import { elementAt, map, Observable, of, switchMap } from 'rxjs';
-import { user } from '@angular/fire/auth';
+import { map, Observable, of, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
