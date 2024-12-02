@@ -21,25 +21,38 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <ion-list *ngIf="segment == 'chats'  && (chatRooms) as rooms">
-    <ion-list-header class="ion-padding-bottom"> RECENT CHATS </ion-list-header>
+<ion-content color="light">
+  <app-empty-screen *ngIf="(chatRooms | async)?.length === 0" [model]="model">
+  </app-empty-screen>
 
-    <ion-item
-      *ngFor="let item of rooms"
-      (click)="getChat(item)"
-      [detail]="true"
-    >
-      <ion-avatar slot="start">
-        <img [src]=" item?.photo " />
-      </ion-avatar>
-      <ion-label>
-        <h2>{{ item?.name }}</h2>
-        <p>Hey, how are you?</p>
-      </ion-label>
-      <ion-text slot="end" color="dark">10:00 AM</ion-text>
-    </ion-item>
-  </ion-list>
+  <ng-container *ngIf="segment === 'chats' && (chatRooms | async) as rooms">
+    <ion-list *ngIf="rooms?.length > 0">
+      <ion-list-header class="ion-padding-bottom" color="light">
+        RECENT CHATS
+      </ion-list-header>
+
+      <ion-item
+        *ngFor="let item of rooms"
+        (click)="getChat(item)"
+        [detail]="true"
+      >
+        <ng-container *ngIf="(item?.user | async) as user">
+          <ion-avatar slot="start">
+            <img [src]="getUser(user)?.photo" />
+          </ion-avatar>
+          <ion-label>
+            {{getUser(user)?.name}}
+            <!-- <p>
+              <ion-text>
+                message
+              </ion-text>
+            </p> -->
+          </ion-label>
+          <!-- <ion-text slot="end" color="medium">10:00 AM</ion-text> -->
+        </ng-container>
+      </ion-item>
+    </ion-list>
+  </ng-container>
 
   <ion-fab slot="fixed" horizontal="end" vertical="bottom">
     <ion-fab-button (click)="newChat()">
@@ -53,16 +66,15 @@
     (willDismiss)="onWillDismiss($event)"
   >
     <ng-template>
-      <ion-header class="no-shadow">
+      <ion-header>
         <ion-toolbar color="primary">
-          <ion-title color="dark">New Chat</ion-title>
+          <ion-title>New Chat</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cancel()" color="dark">Cancel</ion-button>
+            <ion-button (click)="cancel()">Cancel</ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
-
-      <ion-content *ngIf="(users | async) as user$">
+      <ion-content color="light" *ngIf="(users | async) as user$">
         <ion-list
           class="ion-margin-top"
           [style.background]="'transparent'"
@@ -72,7 +84,8 @@
             *ngFor="let item of user$"
             [item]="item"
             (onClick)="startChat($event)"
-          ></app-user-list>
+          >
+          </app-user-list>
         </ion-list>
       </ion-content>
     </ng-template>
