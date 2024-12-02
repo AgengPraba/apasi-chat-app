@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { getAuth } from '@angular/fire/auth';
 import { addDoc, collection, deleteDoc, doc, Firestore, getDocs } from '@angular/fire/firestore';
 import { NavigationExtras, Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
@@ -25,7 +26,15 @@ export class HomePage implements OnInit {
     title: 'No Chat Rooms',
     color: 'danger'
   };
-  statuses: { message: string; timestamp: string; id: string }[] = []; // Menambahkan id pada tipe data
+  statuses: {
+    message: string;
+    timestamp: string;
+    date: string;
+    userName: string;
+    userPhoto: string;
+    id: string;
+  }[] = [];
+  
   newStatus: string = ''; // Input status baru
   // users = [
   //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
@@ -131,32 +140,38 @@ export class HomePage implements OnInit {
     this.statuses = querySnapshot.docs.map(doc => {
       const data = doc.data(); // Ambil data dari Firestore
       return { 
-        message: data['message'],     // Akses menggunakan bracket notation
-        timestamp: data['timestamp'], // Akses menggunakan bracket notation
-        id: doc.id                    // Ambil 'id' dari Firestore
+        message: data['message'],
+        timestamp: data['timestamp'],
+        date: data['date'],
+        userName: data['userName'],
+        userPhoto: data['userPhoto'],
+        id: doc.id
       };
     });
-  }  
+  }
+  
 
   async addStatus() {
     if (this.newStatus.trim() !== '') {
-      const timestamp = this.getTime(); // Ambil waktu
-      try {
-        const docRef = await addDoc(collection(this.firestore, 'statuses'), {
+      const auth = getAuth();
+      const user = auth.currentUser;
+  
+      if (user) {
+        const timestamp = this.getTime(); // Jam saat ini
+        const date = this.getDate();      // Tanggal saat ini
+        
+        await addDoc(collection(this.firestore, 'statuses'), {
           message: this.newStatus,
           timestamp: timestamp,
+          date: date,
+          userName: user.displayName || 'Anonymous',  // Nama user
+          userPhoto: user.photoURL || 'assets/default-avatar.png' // Foto profil user
         });
-        this.statuses.unshift({
-          message: this.newStatus,
-          timestamp: timestamp,
-          id: docRef.id, // Menambahkan ID dari Firestore
-        });
-        this.newStatus = ''; // Menghapus input setelah ditambahkan
-      } catch (e) {
-        console.error('Error adding status: ', e);
+        this.newStatus = ''; // Hapus input setelah status ditambahkan
+        this.getStatuses();  // Refresh status dari database
       }
     }
-  }  
+  }
 
   // Fungsi untuk mendapatkan waktu
   getTime(): string {
@@ -172,5 +187,15 @@ export class HomePage implements OnInit {
     await deleteDoc(statusRef);
     // Hapus status dari array statuses
     this.statuses = this.statuses.filter(status => status.id !== id);
+  }
+
+  getDate(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+    return now.toLocaleDateString(undefined, options); // Menghasilkan format tanggal seperti "29 November 2024"
   }
 }

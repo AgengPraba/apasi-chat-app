@@ -58,14 +58,18 @@
       
         <ion-list>
           <ion-item *ngFor="let status of statuses">
+            <ion-avatar slot="start">
+              <img [src]="status.userPhoto" alt="User Photo" />
+            </ion-avatar>
             <ion-label>
-              <h2>{{ status.message }}</h2>
-              <p>{{ status.timestamp }}</p>
+              <h2>{{ status.userName }}</h2>
+              <p>{{ status.message }}</p>
+              <p>{{ status.date }} - {{ status.timestamp }}</p>
             </ion-label>
             <ion-button color="danger" (click)="deleteStatus(status.id)">Delete</ion-button>
           </ion-item>
         </ion-list>        
-      </ion-content>
+      </ion-content>      
     </ng-container>
 
   <ion-fab slot="fixed" horizontal="end" vertical="bottom">
