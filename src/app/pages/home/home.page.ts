@@ -8,6 +8,7 @@ import { map, Observable, take } from 'rxjs';
 import { ApiService } from 'src/app/services/api/api.service';
 import { ChatService } from 'src/app/services/chat/chat.service';
 import { StatusService } from 'src/app/services/status/status.service';
+import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -26,33 +27,27 @@ export class HomePage implements OnInit {
     title: 'No Chat Rooms',
     color: 'danger'
   };
+
   statuses: {
     message: string;
-    timestamp: string;
+    timestamp: Date;
     date: string;
-    userName: string;
-    userPhoto: string;
+    userId: string;
     id: string;
   }[] = [];
-  
-  newStatus: string = ''; // Input status baru
-  // users = [
-  //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
-  //   { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
-  //   { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
-  // ];
-  // chatRooms = [
-  //   { id: 1, name: 'John Doe', photo: 'https://i.pravatar.cc/400?img=1' },
-  //   { id: 2, name: 'John Dono', photo: 'https://i.pravatar.cc/400?img=2' },
-  //   { id: 3, name: 'John Dani', photo: 'https://i.pravatar.cc/400?img=3' },
-  // ];
+  newStatus: string = ''; 
+
+  userDetail: { [key: string]: any } = {};
+
+  currentUserId: string;
 
   constructor(
     private router: Router, 
     private chatService: ChatService, 
     private statusService: StatusService,
     private api: ApiService,
-    private firestore: Firestore
+    private firestore: Firestore,
+    private auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -61,6 +56,12 @@ export class HomePage implements OnInit {
 
     // Panggil getStatuses untuk mengambil status
     this.getStatuses();
+
+    this.loadCurrentUser();
+  }
+
+  async loadCurrentUser() {
+    this.currentUserId = this.auth.getId();
   }
 
   getRooms(){
@@ -138,23 +139,28 @@ export class HomePage implements OnInit {
   async getStatuses() {
     const querySnapshot = await getDocs(collection(this.firestore, 'statuses'));
     this.statuses = querySnapshot.docs.map(doc => {
-      const data = doc.data(); // Ambil data dari Firestore
+      const data = doc.data();
       return { 
         message: data['message'],
         timestamp: data['timestamp'],
         date: data['date'],
-        userName: data['userName'],
-        userPhoto: data['userPhoto'],
+        userId: data['userId'],
         id: doc.id
       };
     });
-  }
+    
+    // Panggil getUserData untuk setiap userId unik setelah memuat status
+    for (const status of this.statuses) {
+      await this.getUserData(status.userId); // Load data user untuk setiap status
+    }
+  }  
   
 
   async addStatus() {
     if (this.newStatus.trim() !== '') {
       const auth = getAuth();
       const user = auth.currentUser;
+      console.log('---------------------------------', auth);
   
       if (user) {
         const timestamp = this.getTime(); // Jam saat ini
@@ -164,8 +170,7 @@ export class HomePage implements OnInit {
           message: this.newStatus,
           timestamp: timestamp,
           date: date,
-          userName: user.displayName || 'Anonymous',  // Nama user
-          userPhoto: user.photoURL || 'assets/default-avatar.png' // Foto profil user
+          userId: this.auth.getId(),
         });
         this.newStatus = ''; // Hapus input setelah status ditambahkan
         this.getStatuses();  // Refresh status dari database
@@ -173,7 +178,24 @@ export class HomePage implements OnInit {
     }
   }
 
-  // Fungsi untuk mendapatkan waktu
+  async getUserData(userId: string) {
+    if (!this.userDetail[userId]) {
+      try {
+        const userData = await this.auth.getUserData(userId);
+        if (userData) {
+          this.userDetail[userId] = userData; // Simpan data jika berhasil diambil
+        } else {
+          this.userDetail[userId] = { name: 'Unknown', photoUrl: 'assets/default-avatar.png' }; // Fallback jika tidak ada data
+        }
+      } catch (error) {
+        console.error(`Failed to load user data for userId ${userId}:`, error);
+        this.userDetail[userId] = { name: 'Error', photoUrl: 'assets/default-avatar.png' }; // Fallback jika terjadi error
+      }
+    }
+    return this.userDetail[userId]; // Kembalikan data yang telah di-cache
+  }
+  
+
   getTime(): string {
     const now = new Date();
     return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;

@@ -63,15 +63,19 @@
         <ion-list>
           <ion-item *ngFor="let status of statuses">
             <ion-avatar slot="start">
-              <img [src]="status.userPhoto" alt="User Photo" />
+              <img [src]="userDetail[status.userId]?.photo || 'assets/default-avatar.png'" alt="User Photo" />
             </ion-avatar>
             <ion-label>
-              <h2>{{ status.userName }}</h2>
+              <h2>{{ userDetail[status.userId]?.name || 'Loading...' }}</h2>
               <p>{{ status.message }}</p>
               <p>{{ status.date }} - {{ status.timestamp }}</p>
             </ion-label>
-            <ion-button color="danger" (click)="deleteStatus(status.id)">Delete</ion-button>
-          </ion-item>
+          
+            <!-- Tampilkan tombol Delete jika userId status sama dengan userId yang sedang login -->
+            <ion-button *ngIf="status.userId === currentUserId" color="danger" (click)="deleteStatus(status.id)">
+              Delete
+            </ion-button>
+          </ion-item>          
         </ion-list>        
       </ion-content>      
     </ng-container>
