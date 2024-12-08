@@ -18,7 +18,7 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 export class HomePage implements OnInit {
   @ViewChild('new_chat') modal: ModalController;
   @ViewChild('popover') popover: PopoverController;
-  segment: string = 'chats';
+  segment: string = 'profile';
   open_new_chat: boolean = false;
   users: Observable<any[]>;
   chatRooms: Observable<any[]>;
@@ -39,7 +39,8 @@ export class HomePage implements OnInit {
 
   userDetail: { [key: string]: any } = {};
 
-  currentUserId: string;
+  currentUserId: any;
+  currentUserProfile: any;
 
   constructor(
     private router: Router, 
@@ -47,24 +48,34 @@ export class HomePage implements OnInit {
     private statusService: StatusService,
     private api: ApiService,
     private firestore: Firestore,
-    private auth: AuthService
+    private auth: AuthService,
+    private authService: AuthService
   ) {}
-
-  ngOnInit() {
-     // Panggil getRooms untuk mengambil chat rooms
-    this.getRooms();
-
-    // Panggil getStatuses untuk mengambil status
-    this.getStatuses();
-
-    this.loadCurrentUser();
-  }
 
   async loadCurrentUser() {
     this.currentUserId = this.auth.getId();
   }
 
-  getRooms(){
+  async ngOnInit() {
+    try {
+      this.currentUserId = this.authService.getId();
+      this.currentUserProfile = await this.authService.getUserData(
+        this.currentUserId
+      );
+      this.getRooms();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+
+    this.getStatuses();
+
+    this.loadCurrentUser();
+  }
+
+  editProfile() {}
+
+  getRooms() {
+    // this.chatService.getId();
     this.chatService.getChatRooms();
     this.chatRooms = this.chatService.chatRooms;
     console.log('chatrooms: ', this.chatRooms);
