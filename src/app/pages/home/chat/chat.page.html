@@ -25,13 +25,34 @@
 
 <ion-footer>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <input
+        type="file"
+        (change)="selectImage($event)"
+        accept="image/*"
+        hidden
+        #fileInput
+        class="hidden"
+      />
+      <ion-button (click)="fileInput.click()">
+        <ion-icon size="large" name="attach" color="primary"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <div *ngIf="selectedImage">
+      <img
+        [src]="selectedImage"
+        alt="Preview"
+        style="max-width: 100%; height: auto"
+      />
+    </div>
     <ion-textarea
       autoGrow
       rows="1"
       placeholder="send message"
-      class="ion-text-center"
+      class="ion-text-left"
       [(ngModel)]="message"
-    ></ion-textarea>
+    >
+    </ion-textarea>
     <ion-buttons slot="end">
       <ion-fab-button
         *ngIf="!isLoading"

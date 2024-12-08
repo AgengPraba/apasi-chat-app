@@ -4,6 +4,7 @@ import { ModalController } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular';
 import { Observable, take } from 'rxjs';
 import { ChatService } from 'src/app/services/chat/chat.service';
+import { AuthService } from 'src/app/services/auth/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -13,7 +14,7 @@ import { ChatService } from 'src/app/services/chat/chat.service';
 export class HomePage implements OnInit {
   @ViewChild('new_chat') modal: ModalController;
   @ViewChild('popover') popover: PopoverController;
-  segment: string = 'chats';
+  segment: string = 'profile';
   open_new_chat: boolean = false;
   users: Observable<any[]>;
   chatRooms: Observable<any[]>;
@@ -23,11 +24,28 @@ export class HomePage implements OnInit {
     color: 'danger',
   };
 
-  constructor(private router: Router, private chatService: ChatService) {}
+  currentUserId: any;
+  currentUserProfile: any;
 
-  ngOnInit() {
-    this.getRooms();
+  constructor(
+    private router: Router,
+    private chatService: ChatService,
+    private authService: AuthService
+  ) {}
+
+  async ngOnInit() {
+    try {
+      this.currentUserId = this.authService.getId();
+      this.currentUserProfile = await this.authService.getUserData(
+        this.currentUserId
+      );
+      this.getRooms();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
   }
+
+  editProfile() {}
 
   getRooms() {
     // this.chatService.getId();

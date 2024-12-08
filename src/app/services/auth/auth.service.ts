@@ -60,7 +60,7 @@ export class AuthService {
         formValue.email,
         formValue.password
       );
-      console.log('registered user: ', registeredUser);
+      // console.log('registered user: ', registeredUser);
       const data = {
         email: formValue.email,
         name: formValue.username,

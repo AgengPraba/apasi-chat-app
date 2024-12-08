@@ -14,12 +14,21 @@ import {
   where,
 } from '@angular/fire/firestore';
 import { Injectable } from '@angular/core';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  constructor(private firestore: Firestore) {}
+  private supabase: SupabaseClient;
+
+  constructor(private firestore: Firestore) {
+    // Konfigurasi Supabase
+    const supabaseUrl = environment.supabaseUrl; // URL Supabase Anda
+    const supabaseKey = environment.supabaseKey; // Key Supabase Anda
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+  }
 
   docRef(path) {
     return doc(this.firestore, path);
@@ -81,5 +90,46 @@ export class ApiService {
 
   orderByQuery(fieldPath, directionStr: OrderByDirection = 'asc') {
     return orderBy(fieldPath, directionStr);
+  }
+
+  // Fungsi untuk upload gambar ke Supabase Storage
+  async uploadImage(file: File): Promise<string | null> {
+    console.log('Uploading image:', file);
+    if (!file || !file.name) {
+      console.error('No file provided or file has no name');
+      return null;
+    }
+
+    const filePath = `images/${Date.now()}_${file.name}`; // Pastikan file.name ada
+    console.log('File path:', filePath);
+
+    // Upload file ke Supabase Storage
+    const { data, error } = await this.supabase.storage
+      .from('apasi-img')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('Error uploading file:', error);
+      console.error('Error details:', error.message); // Detil pesan error
+      return null;
+    } else {
+      console.log('File uploaded successfully:', data);
+    }
+
+    // Mendapatkan URL publik dari file yang sudah di-upload
+    const { data: urlData } = this.supabase.storage
+      .from('apasi-img')
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData?.publicUrl;
+
+    if (!publicUrl) {
+      console.error('Error getting public URL');
+      return null; // Mengembalikan null jika terjadi error
+    }
+
+    // Kembalikan URL gambar yang valid
+    console.log('Image URL:', publicUrl);
+    return publicUrl;
   }
 }

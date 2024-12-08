@@ -12,6 +12,6 @@ export class ChatBoxComponent implements OnInit {
   constructor() {}
 
   ngOnInit() {
-    console.log(this.chat);
+    console.log('Chat Object:', this.chat);
   }
 }

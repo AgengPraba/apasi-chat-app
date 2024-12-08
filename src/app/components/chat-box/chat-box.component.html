@@ -6,7 +6,13 @@
     [slot]="chat?.sender === current_user_id ? 'end' : 'start'"
     class="ion-text-wrap"
   >
-    <ion-text>{{ chat?.message }}</ion-text>
+    <div *ngIf="chat.imageUrl">
+      <img [src]="chat?.imageUrl" />
+    </div>
+    <div *ngIf="chat.message">
+      <ion-text>{{ chat?.message }}</ion-text>
+    </div>
+
     <ion-note>
       <small>{{ chat?.createdAt?.toDate() | date : "HH:mm" }}</small>
       <ion-icon

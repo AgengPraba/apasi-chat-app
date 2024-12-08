@@ -17,7 +17,7 @@ export class ChatService {
   }
 
   getId() {
-    console.log(this.currentUserId);
+    // console.log(this.currentUserId);
     this.currentUserId = this.auth.getId();
   }
 
@@ -44,7 +44,7 @@ export class ChatService {
         item.id = doc.id;
         return item;
       });
-      console.log('exist docs: ', room);
+      // console.log('exist docs: ', room);
       if (room?.length > 0) return room[0];
       const data = {
         members: [this.currentUserId, user_id],
@@ -61,7 +61,7 @@ export class ChatService {
 
   getChatRooms() {
     this.getId();
-    console.log(this.currentUserId);
+    // console.log(this.currentUserId);
     this.chatRooms = this.api
       .collectionDataQuery(
         'chatRooms',
@@ -74,7 +74,7 @@ export class ChatService {
             const user_data = element.members.filter(
               (x) => x != this.currentUserId
             );
-            console.log(user_data);
+            // console.log(user_data);
             const user = this.api.docDataQuery(`users/${user_data[0]}`, true);
             // const user: any = this.api.getDocById(`users/${user_data[0]}`);
             element.user = user;
@@ -96,18 +96,55 @@ export class ChatService {
       .pipe(map((arr: any) => arr.reverse()));
   }
 
-  async sendMessage(chatId, msg) {
+  // async sendMessage(chatId, msg) {
+  //   try {
+  //     const new_message = {
+  //       message: msg,
+  //       sender: this.currentUserId,
+  //       createdAt: new Date(),
+  //     };
+  //     console.log(chatId);
+  //     if (chatId) {
+  //       await this.api.addDocument(`chats/${chatId}/messages`, new_message);
+  //     }
+  //   } catch (e) {
+  //     throw e;
+  //   }
+  // }
+
+  async sendMessage(chatId: string, msg: any) {
     try {
-      const new_message = {
-        message: msg,
+      // Memastikan bahwa jika ada gambar, imageUrl ada di dalam pesan
+      let messageData: {
+        sender: string;
+        createdAt: Date;
+        imageUrl?: string;
+        message?: string;
+      } = {
         sender: this.currentUserId,
         createdAt: new Date(),
       };
-      console.log(chatId);
+
+      if (msg.imageUrl) {
+        messageData = {
+          ...messageData,
+          imageUrl: msg.imageUrl, // Menggunakan imageUrl jika ada
+        };
+      }
+
+      if (msg.message) {
+        messageData = {
+          ...messageData,
+          message: msg.message, // Menambahkan teks jika ada
+        };
+      }
+
+      // Kirim pesan ke Firestore
       if (chatId) {
-        await this.api.addDocument(`chats/${chatId}/messages`, new_message);
+        await this.api.addDocument(`chats/${chatId}/messages`, messageData);
       }
     } catch (e) {
+      console.error('Error sending message:', e);
       throw e;
     }
   }
