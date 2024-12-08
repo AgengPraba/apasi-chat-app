@@ -23,7 +23,7 @@ import { environment } from 'src/environments/environment';
 export class ApiService {
   private supabase: SupabaseClient;
 
-  constructor(private firestore: Firestore) {
+  constructor(public firestore: Firestore) {
     // Konfigurasi Supabase
     const supabaseUrl = environment.supabaseUrl; // URL Supabase Anda
     const supabaseKey = environment.supabaseKey; // Key Supabase Anda
