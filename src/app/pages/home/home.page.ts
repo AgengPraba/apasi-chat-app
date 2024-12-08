@@ -30,17 +30,23 @@ export class HomePage implements OnInit {
 
   statuses: {
     message: string;
+    selectedImage?: string | ArrayBuffer | null; // Tambahkan properti untuk gambar
+    imageUrl?: string; // URL gambar yang diunggah
     timestamp: Date;
     date: string;
     userId: string;
     id: string;
-  }[] = [];
+  }[] = [];  
   newStatus: string = ''; 
 
   userDetail: { [key: string]: any } = {};
 
   currentUserId: any;
   currentUserProfile: any;
+
+  selectedFile: File | null = null;
+
+  selectedImage: string | null = null; // Tambahkan ini
 
   constructor(
     private router: Router, 
@@ -147,6 +153,28 @@ export class HomePage implements OnInit {
     return user;
   }
 
+
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      const reader = new FileReader();
+      
+      // Membaca file sebagai Data URL
+      reader.onload = (e) => {
+        const result = e.target?.result as string | null;
+        
+        // Menyimpan hasil pembacaan file untuk preview
+        if (result) {
+          this.selectedImage = result; // Menyimpan data URL untuk preview
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+
   async getStatuses() {
     const querySnapshot = await getDocs(collection(this.firestore, 'statuses'));
     this.statuses = querySnapshot.docs.map(doc => {
@@ -156,7 +184,8 @@ export class HomePage implements OnInit {
         timestamp: data['timestamp'],
         date: data['date'],
         userId: data['userId'],
-        id: doc.id
+        id: doc.id,
+        imageUrl: data['imageUrl'] 
       };
     });
     
@@ -171,23 +200,37 @@ export class HomePage implements OnInit {
     if (this.newStatus.trim() !== '') {
       const auth = getAuth();
       const user = auth.currentUser;
-      console.log('---------------------------------', auth);
   
       if (user) {
-        const timestamp = this.getTime(); // Jam saat ini
-        const date = this.getDate();      // Tanggal saat ini
-        
+        const timestamp = this.getTime();
+        const date = this.getDate();
+        let imageUrl = null;
+  
+        if (this.selectedFile) {
+          // Upload gambar ke Firebase Storage
+          imageUrl = await this.api.uploadImage(this.selectedFile);
+          if (!imageUrl) {
+            console.error('Failed to upload image');
+            return;
+          }
+        }
+  
+        // Simpan status ke Firestore
         await addDoc(collection(this.firestore, 'statuses'), {
           message: this.newStatus,
-          timestamp: timestamp,
-          date: date,
+          imageUrl, // Tambahkan URL gambar jika ada
+          timestamp,
+          date,
           userId: this.auth.getId(),
         });
-        this.newStatus = ''; // Hapus input setelah status ditambahkan
-        this.getStatuses();  // Refresh status dari database
+  
+        this.newStatus = '';
+        this.selectedFile = null;
+        this.selectedImage = null;
+        this.getStatuses(); // Refresh status dari database
       }
     }
-  }
+  }  
 
   async getUserData(userId: string) {
     if (!this.userDetail[userId]) {
