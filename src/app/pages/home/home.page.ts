@@ -1,12 +1,22 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { getAuth } from '@angular/fire/auth';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  Firestore,
+  getDocs,
+} from '@angular/fire/firestore';
 import { NavigationExtras, Router } from '@angular/router';
 import { ModalController } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular';
-import { Observable, take } from 'rxjs';
+import { map, Observable, take } from 'rxjs';
+import { ApiService } from 'src/app/services/api/api.service';
 import { ChatService } from 'src/app/services/chat/chat.service';
+import { StatusService } from 'src/app/services/status/status.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { AlertController } from '@ionic/angular';
-import { ApiService } from 'src/app/services/api/api.service';
 
 @Component({
   selector: 'app-home',
@@ -26,16 +36,41 @@ export class HomePage implements OnInit {
     color: 'danger',
   };
 
+  statuses: {
+    message: string;
+    selectedImage?: string | ArrayBuffer | null; // Tambahkan properti untuk gambar
+    imageUrl?: string; // URL gambar yang diunggah
+    timestamp: Date;
+    date: string;
+    userId: string;
+    id: string;
+  }[] = [];
+  newStatus: string = '';
+
+  userDetail: { [key: string]: any } = {};
+
   currentUserId: any;
   currentUserProfile: any;
+
+  selectedFile: File | null = null;
+
+  selectedImage: string | null = null; // Tambahkan ini
+  apiService: any;
+  alertController: any;
 
   constructor(
     private router: Router,
     private chatService: ChatService,
-    private authService: AuthService,
-    private alertController: AlertController,
-    private apiService: ApiService
+    private statusService: StatusService,
+    private api: ApiService,
+    private firestore: Firestore,
+    private auth: AuthService,
+    private authService: AuthService
   ) {}
+
+  async loadCurrentUser() {
+    this.currentUserId = this.auth.getId();
+  }
 
   async ngOnInit() {
     try {
@@ -47,6 +82,10 @@ export class HomePage implements OnInit {
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
+
+    this.getStatuses();
+
+    this.loadCurrentUser();
   }
 
   getRooms() {
@@ -61,7 +100,7 @@ export class HomePage implements OnInit {
       console.log('logout');
       this.popover.dismiss();
       await this.chatService.auth.logout();
-      // this.chatService.currentUserId = null;
+      this.chatService.currentUserId = null;
       this.router.navigateByUrl('/login', { replaceUrl: true });
     } catch (e) {
       console.log(e);
@@ -90,8 +129,6 @@ export class HomePage implements OnInit {
 
   async startChat(item) {
     try {
-      // this.global.showLoader();
-      // create chatroom
       const room = await this.chatService.createChatRoom(item?.uid);
       console.log('room: ', room);
       this.cancel();
@@ -101,12 +138,11 @@ export class HomePage implements OnInit {
         },
       };
       this.router.navigate(['/', 'home', 'chats', room?.id], navData);
-      // this.global.hideLoader();
     } catch (e) {
       console.log(e);
-      // this.global.hideLoader();
     }
   }
+
   getChat(item) {
     (item?.user).pipe(take(1)).subscribe((user_data) => {
       console.log('data: ', user_data);
@@ -186,5 +222,128 @@ export class HomePage implements OnInit {
     } catch (error) {
       console.error('Failed to load user profile:', error);
     }
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      const reader = new FileReader();
+
+      // Membaca file sebagai Data URL
+      reader.onload = (e) => {
+        const result = e.target?.result as string | null;
+
+        // Menyimpan hasil pembacaan file untuk preview
+        if (result) {
+          this.selectedImage = result; // Menyimpan data URL untuk preview
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  async getStatuses() {
+    const querySnapshot = await getDocs(collection(this.firestore, 'statuses'));
+    this.statuses = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        message: data['message'],
+        timestamp: data['timestamp'],
+        date: data['date'],
+        userId: data['userId'],
+        id: doc.id,
+        imageUrl: data['imageUrl'],
+      };
+    });
+
+    // Panggil getUserData untuk setiap userId unik setelah memuat status
+    for (const status of this.statuses) {
+      await this.getUserData(status.userId); // Load data user untuk setiap status
+    }
+  }
+
+  async addStatus() {
+    if (this.newStatus.trim() !== '') {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (user) {
+        const timestamp = this.getTime();
+        const date = this.getDate();
+        let imageUrl = null;
+
+        if (this.selectedFile) {
+          // Upload gambar ke Firebase Storage
+          imageUrl = await this.api.uploadImage(this.selectedFile);
+          if (!imageUrl) {
+            console.error('Failed to upload image');
+            return;
+          }
+        }
+
+        // Simpan status ke Firestore
+        await addDoc(collection(this.firestore, 'statuses'), {
+          message: this.newStatus,
+          imageUrl, // Tambahkan URL gambar jika ada
+          timestamp,
+          date,
+          userId: this.auth.getId(),
+        });
+
+        this.newStatus = '';
+        this.selectedFile = null;
+        this.selectedImage = null;
+        this.getStatuses(); // Refresh status dari database
+      }
+    }
+  }
+
+  async getUserData(userId: string) {
+    if (!this.userDetail[userId]) {
+      try {
+        const userData = await this.auth.getUserData(userId);
+        if (userData) {
+          this.userDetail[userId] = userData; // Simpan data jika berhasil diambil
+        } else {
+          this.userDetail[userId] = {
+            name: 'Unknown',
+            photoUrl: 'assets/default-avatar.png',
+          }; // Fallback jika tidak ada data
+        }
+      } catch (error) {
+        console.error(`Failed to load user data for userId ${userId}:`, error);
+        this.userDetail[userId] = {
+          name: 'Error',
+          photoUrl: 'assets/default-avatar.png',
+        }; // Fallback jika terjadi error
+      }
+    }
+    return this.userDetail[userId]; // Kembalikan data yang telah di-cache
+  }
+
+  getTime(): string {
+    const now = new Date();
+    return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  // Fungsi untuk menghapus status berdasarkan id
+  async deleteStatus(id: string) {
+    console.log(`Deleting status with id: ${id}`);
+    // Hapus status dari Firestore
+    const statusRef = doc(this.firestore, 'statuses', id);
+    await deleteDoc(statusRef);
+    // Hapus status dari array statuses
+    this.statuses = this.statuses.filter((status) => status.id !== id);
+  }
+
+  getDate(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+    return now.toLocaleDateString(undefined, options); // Menghasilkan format tanggal seperti "29 November 2024"
   }
 }

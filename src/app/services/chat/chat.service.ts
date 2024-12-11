@@ -47,15 +47,19 @@ export class ChatService {
       // console.log('exist docs: ', room);
       if (room?.length > 0) return room[0];
       const data = {
-        members: [this.currentUserId, user_id],
+        members: [
+          this.currentUserId,
+          user_id
+        ],
         type: 'private',
         createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: new Date()
       };
+
       room = await this.api.addDocument('chatRooms', data);
       return room;
-    } catch (e) {
-      throw e;
+    } catch(e){
+      throw(e);
     }
   }
 
@@ -88,13 +92,12 @@ export class ChatService {
   }
 
   getChatRoomMessages(chatRoomId) {
-    this.selectedChatRoomMessages = this.api
-      .collectionDataQuery(
-        `chats/${chatRoomId}/messages`,
-        this.api.orderByQuery('createdAt', 'desc')
-      )
-      .pipe(map((arr: any) => arr.reverse()));
-  }
+    this.selectedChatRoomMessages = this.api.collectionDataQuery(
+      `chats/${chatRoomId}/messages`,
+      this.api.orderByQuery('createdAt', 'desc')
+    )
+    .pipe(map((arr: any) => arr.reverse()));
+  }  
 
   // async sendMessage(chatId, msg) {
   //   try {
@@ -122,7 +125,7 @@ export class ChatService {
         message?: string;
       } = {
         sender: this.currentUserId,
-        createdAt: new Date(),
+        createdAt: new Date()
       };
 
       if (msg.imageUrl) {

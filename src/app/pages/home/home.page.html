@@ -96,6 +96,91 @@
     </ion-modal>
   </ng-container>
 
+    <!-- Konten untuk Status -->
+    <ng-container *ngIf="segment === 'status'">
+      <ion-content>
+        <!-- Input untuk menulis status -->
+        <ion-item>
+          <ion-input 
+            [(ngModel)]="newStatus" 
+            placeholder="What's on your mind?"
+            clear-input="true"
+            autofocus
+          ></ion-input>
+        </ion-item>
+      
+        <!-- Input untuk mengunggah gambar -->
+        <ion-item lines="none">
+          <ion-button expand="block" (click)="fileInput.click()">Choose Image</ion-button>
+          <input 
+            type="file" 
+            hidden 
+            #fileInput 
+            (change)="onFileSelected($event)" 
+            accept="image/*" 
+          />
+        </ion-item>
+      
+        <!-- Pratinjau gambar yang dipilih -->
+        <div *ngIf="selectedImage" style="text-align: center; margin: 10px 0;">
+          <h4>Image Preview:</h4>
+          <img 
+            [src]="selectedImage" 
+            alt="Preview" 
+            style="width: 150px; height: 150px; object-fit: cover; border-radius: 10px; border: 1px solid #ccc;"
+          />
+        </div>
+      
+        <!-- Tombol untuk memposting status -->
+        <ion-item lines="none">
+          <ion-button expand="block" (click)="addStatus()" [disabled]="!newStatus.trim()">Post Status</ion-button>
+        </ion-item>
+      
+        <!-- Daftar status -->
+        <ion-list>
+          <ion-item *ngFor="let status of statuses">
+            <!-- Avatar pengguna -->
+            <ion-avatar slot="start">
+              <img 
+                [src]="userDetail[status.userId]?.photo || 'assets/default-avatar.png'" 
+                alt="User Photo" 
+              />
+            </ion-avatar>
+            <!-- Detail status -->
+            <ion-label>
+              <h2>{{ userDetail[status.userId]?.name || 'Loading...' }}</h2>
+              <p>{{ status.message }}</p>
+              <!-- Tampilkan gambar status jika ada -->
+              <div *ngIf="status.imageUrl">
+                <img 
+                  [src]="status.imageUrl" 
+                  alt="Status Image" 
+                  style="width: 100%; max-width: 300px; height: auto; border-radius: 10px; margin-top: 10px;" 
+                />
+              </div>
+              <p style="font-size: 0.85rem; color: gray;">
+                {{ status.date }} - {{ status.timestamp }}
+              </p>
+            </ion-label>
+            <!-- Tombol hapus -->
+            <ion-button 
+              *ngIf="status.userId === currentUserId" 
+              color="danger" 
+              fill="outline" 
+              (click)="deleteStatus(status.id)"
+            >
+              Delete
+            </ion-button>
+          </ion-item>
+        </ion-list>
+      </ion-content>      
+    </ng-container>
+
+  <ion-fab slot="fixed" horizontal="end" vertical="bottom">
+    <ion-fab-button (click)="newChat()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
   <ng-container *ngIf="segment === 'profile'">
     <ion-content color="light">
       <!-- Profile Content -->
