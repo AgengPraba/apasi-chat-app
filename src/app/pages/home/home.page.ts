@@ -5,6 +5,8 @@ import { PopoverController } from '@ionic/angular';
 import { Observable, take } from 'rxjs';
 import { ChatService } from 'src/app/services/chat/chat.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
+import { AlertController } from '@ionic/angular';
+import { ApiService } from 'src/app/services/api/api.service';
 
 @Component({
   selector: 'app-home',
@@ -30,7 +32,9 @@ export class HomePage implements OnInit {
   constructor(
     private router: Router,
     private chatService: ChatService,
-    private authService: AuthService
+    private authService: AuthService,
+    private alertController: AlertController,
+    private apiService: ApiService
   ) {}
 
   async ngOnInit() {
@@ -44,8 +48,6 @@ export class HomePage implements OnInit {
       console.error('Error fetching user profile:', error);
     }
   }
-
-  editProfile() {}
 
   getRooms() {
     // this.chatService.getId();
@@ -119,5 +121,70 @@ export class HomePage implements OnInit {
 
   getUser(user: any) {
     return user;
+  }
+
+  async editField(field: 'name' | 'bio') {
+    const alert = await this.alertController.create({
+      header: `Edit ${field === 'name' ? 'Name' : 'Bio'}`,
+      inputs: [
+        {
+          name: field,
+          type: 'text',
+          value: this.currentUserProfile[field],
+          placeholder: `Enter your ${field}`,
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Save',
+          handler: async (data) => {
+            if (data[field] && data[field].trim() !== '') {
+              // Perbarui profil pengguna di state lokal
+              this.currentUserProfile[field] = data[field];
+
+              // Gabungkan data yang sudah ada dengan data yang baru
+              const updatedProfile = { ...this.currentUserProfile };
+
+              // Simpan pembaruan ke Firebase menggunakan ApiService
+              try {
+                await this.apiService.updateUserProfile(
+                  this.currentUserId,
+                  updatedProfile
+                );
+                console.log(`${field} updated successfully`);
+              } catch (error) {
+                console.error(`Failed to update ${field}:`, error);
+              }
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  async ionViewWillEnter() {
+    await this.loadUserProfile();
+  }
+
+  async loadUserProfile() {
+    try {
+      const userDoc = await this.apiService.getUserProfile(this.currentUserId);
+      if (userDoc.exists()) {
+        this.currentUserProfile = {
+          id: this.currentUserId,
+          ...userDoc.data(),
+        };
+        console.log('User profile loaded:', this.currentUserId);
+      } else {
+        console.error('User not found');
+      }
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
   }
 }

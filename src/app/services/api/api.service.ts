@@ -132,4 +132,20 @@ export class ApiService {
     console.log('Image URL:', publicUrl);
     return publicUrl;
   }
+
+  async updateUserProfile(userId: string, data: any) {
+    const userPath = `users/${userId}`;
+    try {
+      await this.setDocument(userPath, data);
+      console.log('Profile updated successfully:', data);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  getUserProfile(userId: string) {
+    const userPath = `users/${userId}`;
+    return this.getDocById(userPath);
+  }
 }
