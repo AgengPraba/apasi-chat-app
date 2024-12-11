@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { orderBy, query } from 'firebase/firestore';
 import { getAuth } from '@angular/fire/auth';
 import {
   addDoc,
@@ -17,6 +18,8 @@ import { ChatService } from 'src/app/services/chat/chat.service';
 import { StatusService } from 'src/app/services/status/status.service';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { AlertController } from '@ionic/angular';
+import { ActionSheetController } from '@ionic/angular';
+import { ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-home',
@@ -26,8 +29,9 @@ import { AlertController } from '@ionic/angular';
 export class HomePage implements OnInit {
   @ViewChild('new_chat') modal: ModalController;
   @ViewChild('popover') popover: PopoverController;
-  segment: string = 'profile';
+  segment: string = 'chats';
   open_new_chat: boolean = false;
+  open_create_status: boolean = false;
   users: Observable<any[]>;
   chatRooms: Observable<any[]>;
   model = {
@@ -40,32 +44,30 @@ export class HomePage implements OnInit {
     message: string;
     selectedImage?: string | ArrayBuffer | null; // Tambahkan properti untuk gambar
     imageUrl?: string; // URL gambar yang diunggah
-    timestamp: Date;
-    date: string;
+    datetime: string;
     userId: string;
     id: string;
   }[] = [];
+
   newStatus: string = '';
-
   userDetail: { [key: string]: any } = {};
-
   currentUserId: any;
   currentUserProfile: any;
-
   selectedFile: File | null = null;
-
   selectedImage: string | null = null; // Tambahkan ini
-  apiService: any;
-  alertController: any;
+  isPosting: boolean;
 
   constructor(
     private router: Router,
     private chatService: ChatService,
     private statusService: StatusService,
-    private api: ApiService,
+    private apiService: ApiService,
     private firestore: Firestore,
     private auth: AuthService,
-    private authService: AuthService
+    private authService: AuthService,
+    private alertController: AlertController,
+    private actionSheetCtrl: ActionSheetController,
+    private toastController: ToastController
   ) {}
 
   async loadCurrentUser() {
@@ -115,6 +117,10 @@ export class HomePage implements OnInit {
     if (!this.users) this.getUsers();
   }
 
+  createStatus() {
+    this.open_create_status = true;
+  }
+
   getUsers() {
     this.chatService.getUsers();
     this.users = this.chatService.users;
@@ -125,6 +131,7 @@ export class HomePage implements OnInit {
   cancel() {
     this.modal.dismiss();
     this.open_new_chat = false;
+    this.open_create_status = false;
   }
 
   async startChat(item) {
@@ -179,13 +186,9 @@ export class HomePage implements OnInit {
           text: 'Save',
           handler: async (data) => {
             if (data[field] && data[field].trim() !== '') {
-              // Perbarui profil pengguna di state lokal
               this.currentUserProfile[field] = data[field];
-
-              // Gabungkan data yang sudah ada dengan data yang baru
               const updatedProfile = { ...this.currentUserProfile };
 
-              // Simpan pembaruan ke Firebase menggunakan ApiService
               try {
                 await this.apiService.updateUserProfile(
                   this.currentUserId,
@@ -244,59 +247,106 @@ export class HomePage implements OnInit {
   }
 
   async getStatuses() {
-    const querySnapshot = await getDocs(collection(this.firestore, 'statuses'));
+    // Mengurutkan status berdasarkan timestamp dari yang terbaru
+    const statusesQuery = query(
+      collection(this.firestore, 'statuses'),
+      orderBy('datetime', 'desc')
+    );
+
+    const querySnapshot = await getDocs(statusesQuery);
     this.statuses = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         message: data['message'],
-        timestamp: data['timestamp'],
-        date: data['date'],
+        datetime: data['datetime'],
         userId: data['userId'],
         id: doc.id,
         imageUrl: data['imageUrl'],
       };
     });
-
     // Panggil getUserData untuk setiap userId unik setelah memuat status
     for (const status of this.statuses) {
       await this.getUserData(status.userId); // Load data user untuk setiap status
     }
+
+    await Promise.all(
+      this.statuses.map(async (status) => {
+        await this.getUserData(status.userId);
+      })
+    );
   }
 
   async addStatus() {
-    if (this.newStatus.trim() !== '') {
-      const auth = getAuth();
-      const user = auth.currentUser;
+    // Validasi minimal memiliki pesan atau gambar
+    if (
+      (this.newStatus.trim() !== '' || this.selectedFile) &&
+      !this.isPosting
+    ) {
+      try {
+        this.isPosting = true;
+        const auth = getAuth();
+        const user = auth.currentUser;
 
-      if (user) {
-        const timestamp = this.getTime();
-        const date = this.getDate();
-        let imageUrl = null;
+        if (user) {
+          const datetime = new Date();
+          let imageUrl = null;
 
-        if (this.selectedFile) {
-          // Upload gambar ke Firebase Storage
-          imageUrl = await this.api.uploadImage(this.selectedFile);
-          if (!imageUrl) {
-            console.error('Failed to upload image');
-            return;
+          // Upload gambar jika ada
+          if (this.selectedFile) {
+            try {
+              imageUrl = await this.apiService.uploadImage(this.selectedFile);
+            } catch (uploadError) {
+              console.error('Gagal mengunggah gambar:', uploadError);
+              this.presentToast('Gagal mengunggah gambar');
+              this.isPosting = false;
+              return;
+            }
+          }
+
+          // Hanya lanjutkan jika ada pesan atau gambar
+          if (this.newStatus.trim() !== '' || imageUrl) {
+            // Simpan status ke Firestore
+            await addDoc(collection(this.firestore, 'statuses'), {
+              message: this.newStatus.trim() || '', // Kirim string kosong jika tidak ada pesan
+              imageUrl: imageUrl || null, // Kirim null jika tidak ada gambar
+              datetime,
+              userId: this.auth.getId(),
+            });
+
+            // Reset form
+            this.resetStatusForm();
+
+            // Refresh daftar status
+            this.getStatuses();
+
+            // Tutup modal
+            this.open_create_status = false;
           }
         }
-
-        // Simpan status ke Firestore
-        await addDoc(collection(this.firestore, 'statuses'), {
-          message: this.newStatus,
-          imageUrl, // Tambahkan URL gambar jika ada
-          timestamp,
-          date,
-          userId: this.auth.getId(),
-        });
-
-        this.newStatus = '';
-        this.selectedFile = null;
-        this.selectedImage = null;
-        this.getStatuses(); // Refresh status dari database
+      } catch (error) {
+        console.error('Gagal menambahkan status:', error);
+        this.presentToast('Gagal mengirim status');
+      } finally {
+        this.isPosting = false;
       }
     }
+  }
+
+  // Metode tambahan untuk mereset formulir
+  private resetStatusForm() {
+    this.newStatus = '';
+    this.selectedFile = null;
+    this.selectedImage = null;
+  }
+
+  // Metode untuk menampilkan toast (pastikan Anda sudah mengimport ToastController)
+  async presentToast(message: string) {
+    const toast = await this.toastController.create({
+      message: message,
+      duration: 2000,
+      position: 'bottom',
+    });
+    await toast.present();
   }
 
   async getUserData(userId: string) {
@@ -322,28 +372,99 @@ export class HomePage implements OnInit {
     return this.userDetail[userId]; // Kembalikan data yang telah di-cache
   }
 
-  getTime(): string {
-    const now = new Date();
-    return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-  }
+  async confirmDeleteStatus(statusId) {
+    const alert = await this.alertController.create({
+      header: 'Confirm Delete',
+      message: 'Are you sure you want to delete this status?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Delete canceled');
+          },
+        },
+        {
+          text: 'Delete',
+          cssClass: 'danger',
+          handler: () => {
+            this.deleteStatus(statusId);
+          },
+        },
+      ],
+    });
 
-  // Fungsi untuk menghapus status berdasarkan id
+    await alert.present();
+  }
   async deleteStatus(id: string) {
-    console.log(`Deleting status with id: ${id}`);
     // Hapus status dari Firestore
     const statusRef = doc(this.firestore, 'statuses', id);
     await deleteDoc(statusRef);
     // Hapus status dari array statuses
     this.statuses = this.statuses.filter((status) => status.id !== id);
+    console.log(`Deleting status with id: ${id}`);
   }
 
-  getDate(): string {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = {
+  getFormattedDate(timestamp: any): { date: string; time: string } {
+    if (!timestamp || !timestamp.seconds) {
+      console.error('Invalid timestamp:', timestamp);
+      return { date: 'Invalid Date', time: 'Invalid Time' };
+    }
+
+    const dateObj = new Date(timestamp.seconds * 1000);
+
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date object:', dateObj);
+      return { date: 'Invalid Date', time: 'Invalid Time' };
+    }
+
+    const date = dateObj.toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    };
-    return now.toLocaleDateString(undefined, options); // Menghasilkan format tanggal seperti "29 November 2024"
+    });
+
+    const time = dateObj.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    return { date, time };
+  }
+
+  // async presentActionSheet(statusUserId, currentUserId) {
+  //   // Pastikan hanya pemilik status yang bisa menghapus
+  //   if (statusUserId !== currentUserId) {
+  //     return;
+  //   }
+
+  //   const actionSheet = await this.actionSheetCtrl.create({
+  //     header: 'Status Opsi',
+  //     buttons: [
+  //       {
+  //         text: 'Hapus Status',
+  //         role: 'destructive',
+  //         icon: 'trash',
+  //         handler: () => {
+  //           this.deleteStatus(statusUserId);
+  //         },
+  //       },
+  //       {
+  //         text: 'Batal',
+  //         role: 'cancel',
+  //         icon: 'close',
+  //         handler: () => {
+  //           console.log('Aksi dibatalkan');
+  //         },
+  //       },
+  //     ],
+  //   });
+
+  //   await actionSheet.present();
+  // }
+
+  clearSelectedImage() {
+    this.selectedImage = null;
   }
 }
