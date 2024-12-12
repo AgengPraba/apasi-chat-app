@@ -539,10 +539,12 @@ export class HomePage implements OnInit {
         const imageUrl = await this.apiService.uploadImage(file);
 
         if (imageUrl) {
-          // Update profil pengguna dengan URL gambar baru
-          await this.apiService.updateUserProfile(this.currentUserId, {
-            photo: imageUrl,
-          });
+          this.currentUserProfile['photo'] = imageUrl;
+          const updatedProfile = { ...this.currentUserProfile };
+          await this.apiService.updateUserProfile(
+            this.currentUserId,
+            updatedProfile
+          );
 
           // Update foto profil lokal
           this.currentUserProfile.photo = imageUrl;

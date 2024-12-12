@@ -29,10 +29,9 @@
 </ion-header>
 
 <ion-content>
-  <app-empty-screen *ngIf="(chatRooms | async)?.length === 0" [model]="model">
-  </app-empty-screen>
-
   <ng-container *ngIf="segment === 'chats' && (chatRooms | async) as rooms">
+    <app-empty-screen *ngIf="(chatRooms | async)?.length === 0" [model]="model">
+    </app-empty-screen>
     <ion-list *ngIf="rooms?.length > 0">
       <ion-list-header class="ion-padding-bottom">
         <ion-chip color="primary">Recent Chats</ion-chip>
