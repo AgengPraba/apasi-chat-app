@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { App } from '@capacitor/app';
-import { orderBy, query } from 'firebase/firestore';
+import { onSnapshot, orderBy, query } from 'firebase/firestore';
 import { getAuth } from '@angular/fire/auth';
 import {
   addDoc,
@@ -24,6 +24,7 @@ import { ToastController } from '@ionic/angular';
 import { Platform } from '@ionic/angular';
 import { Location } from '@angular/common';
 import { NavController } from '@ionic/angular';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-home',
@@ -74,7 +75,8 @@ export class HomePage implements OnInit {
     private toastController: ToastController,
     private platform: Platform,
     private location: Location,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    private cdr: ChangeDetectorRef
   ) {
     this.platform.backButton.subscribeWithPriority(0, () => {
       this.handleBackButton();
@@ -302,33 +304,32 @@ export class HomePage implements OnInit {
   }
 
   async getStatuses() {
-    // Mengurutkan status berdasarkan timestamp dari yang terbaru
     const statusesQuery = query(
       collection(this.firestore, 'statuses'),
       orderBy('datetime', 'desc')
     );
 
-    const querySnapshot = await getDocs(statusesQuery);
-    this.statuses = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        message: data['message'],
-        datetime: data['datetime'],
-        userId: data['userId'],
-        id: doc.id,
-        imageUrl: data['imageUrl'],
-      };
-    });
-    // Panggil getUserData untuk setiap userId unik setelah memuat status
-    for (const status of this.statuses) {
-      await this.getUserData(status.userId); // Load data user untuk setiap status
-    }
+    onSnapshot(statusesQuery, async (querySnapshot) => {
+      this.statuses = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          message: data['message'],
+          datetime: data['datetime'],
+          userId: data['userId'],
+          id: doc.id,
+          imageUrl: data['imageUrl'],
+        };
+      });
 
-    await Promise.all(
-      this.statuses.map(async (status) => {
-        await this.getUserData(status.userId);
-      })
-    );
+      // Memuat data user untuk setiap userId unik
+      const userIds = [
+        ...new Set(this.statuses.map((status) => status.userId)),
+      ];
+      await Promise.all(userIds.map((userId) => this.getUserData(userId)));
+
+      // Memicu perubahan tampilan
+      this.cdr.detectChanges();
+    });
   }
 
   async addStatus() {
