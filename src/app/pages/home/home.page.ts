@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { App } from '@capacitor/app';
 import { orderBy, query } from 'firebase/firestore';
 import { getAuth } from '@angular/fire/auth';
 import {
@@ -20,6 +21,9 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 import { AlertController } from '@ionic/angular';
 import { ActionSheetController } from '@ionic/angular';
 import { ToastController } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
+import { Location } from '@angular/common';
+import { NavController } from '@ionic/angular';
 
 @Component({
   selector: 'app-home',
@@ -67,8 +71,59 @@ export class HomePage implements OnInit {
     private authService: AuthService,
     private alertController: AlertController,
     private actionSheetCtrl: ActionSheetController,
-    private toastController: ToastController
-  ) {}
+    private toastController: ToastController,
+    private platform: Platform,
+    private location: Location,
+    private navCtrl: NavController
+  ) {
+    this.platform.backButton.subscribeWithPriority(0, () => {
+      this.handleBackButton();
+    });
+  }
+
+  handleBackButton() {
+    if (this.segment !== 'chats') {
+      this.segment = 'chats';
+      return;
+    }
+
+    // Jika di halaman home
+    if (this.router.url === '/home') {
+      // Tampilkan konfirmasi keluar
+      this.presentAlertConfirm();
+    } else {
+      // Coba navigasi back dengan metode berbeda
+      try {
+        // Metode 1: Coba router
+        this.router.navigate(['/home'], {
+          replaceUrl: true,
+        });
+      } catch (error) {
+        // Metode 2: Gunakan navCtrl
+        this.navCtrl.navigateRoot('/home');
+      }
+    }
+  }
+
+  async presentAlertConfirm() {
+    const alert = await this.alertController.create({
+      message: 'Do You Want to Exit?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+        },
+        {
+          text: 'Exit',
+          handler: () => {
+            App.exitApp();
+          },
+        },
+      ],
+    });
+
+    await alert.present();
+  }
 
   async loadCurrentUser() {
     this.currentUserId = this.auth.getId();
@@ -466,5 +521,40 @@ export class HomePage implements OnInit {
 
   clearSelectedImage() {
     this.selectedImage = null;
+  }
+
+  changeProfilePicture() {
+    // Memicu input file tersembunyi
+    const fileInput = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    fileInput.click();
+  }
+
+  async onImageSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        // Upload gambar ke Supabase Storage
+        const imageUrl = await this.apiService.uploadImage(file);
+
+        if (imageUrl) {
+          // Update profil pengguna dengan URL gambar baru
+          await this.apiService.updateUserProfile(this.currentUserId, {
+            photo: imageUrl,
+          });
+
+          // Update foto profil lokal
+          this.currentUserProfile.photo = imageUrl;
+
+          // Opsional: Tampilkan pesan berhasil
+          this.presentToast('Foto profil berhasil diperbarui');
+        }
+      } catch (error) {
+        // Tangani error
+        console.error('Gagal mengganti foto profil:', error);
+        this.presentToast('Gagal mengganti foto profil');
+      }
+    }
   }
 }

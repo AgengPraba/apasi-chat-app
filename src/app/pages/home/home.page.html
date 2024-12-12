@@ -203,7 +203,7 @@
               />
               <ion-button
                 fill="outline"
-                (click)="fileInput.click();  $event.stopPropagation()"
+                (click)="fileInput.click()"
                 class="image-upload-button"
               >
                 <ion-icon
@@ -264,8 +264,18 @@
           <!-- Profile Picture -->
           <ion-grid>
             <ion-row class="ion-justify-content-center">
-              <ion-avatar style="width: 150px; height: 150px">
+              <ion-avatar
+                style="width: 150px; height: 150px"
+                (click)="changeProfilePicture()"
+              >
                 <img [src]="currentUserProfile?.photo" alt="Profile Picture" />
+                <input
+                  type="file"
+                  #fileInput
+                  (change)="onImageSelected($event)"
+                  accept="image/*"
+                  style="display: none"
+                />
               </ion-avatar>
             </ion-row>
 

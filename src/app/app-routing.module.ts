@@ -7,7 +7,7 @@ import { authMatchGuard } from './guards/auth/auth.guard';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
+    redirectTo: 'home',
     pathMatch: 'full',
   },
   {
@@ -21,11 +21,7 @@ const routes: Routes = [
     path: 'login',
     loadChildren: () =>
       import('./pages/login/login.module').then((m) => m.LoginPageModule),
-  },  {
-    path: 'status',
-    loadChildren: () => import('./status/status.module').then( m => m.StatusPageModule)
   },
-
 ];
 
 @NgModule({
